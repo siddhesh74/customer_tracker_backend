@@ -3,78 +3,31 @@ const { createObjectCsvStringifier } = require("csv-writer");
 
 const fastcsv = require("fast-csv");
 
-// exports.downloadCustomersCSV = async (req, res) => {
-//   try {
-//     const filter = { createdBy: req.userId };
-//     res.setHeader("Content-Type", "text/csv");
-//     res.setHeader("Content-Disposition", "attachment; filename=customers.csv");
-
-//     // Use lean() for raw JS objects (faster, less memory)
-//     const cursor = Customer.find(filter).lean().cursor();
-
-//     // Write CSV header
-//     const csvStream = fastcsv.format({ headers: true });
-//     csvStream.pipe(res);
-
-//     for await (const c of cursor) {
-//       csvStream.write({
-//         Name: c.name,
-//         Email: c.email,
-//         Phone: c.phone,
-//         Address:
-//           typeof c.address === "object"
-//             ? [c.address.street, c.address.city, c.address.state, c.address.postalCode, c.address.country]
-//                 .filter(Boolean)
-//                 .join(", ")
-//             : c.address || "",
-//         Notes: c.notes,
-//         Active: c.isActive ? "Yes" : "No",
-//       });
-//     }
-//     csvStream.end();
-//   } catch (error) {
-//     res.status(500).json({ message: "Failed to download CSV", error });
-//   }
-// };
-
-// Get customers
-
 exports.downloadCustomersCSV = async (req, res) => {
   try {
     const filter = { createdBy: req.userId };
-    const { startDate, endDate } = req.query;
-
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
-
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", "attachment; filename=customers.csv");
 
+    // Use lean() for raw JS objects (faster, less memory)
     const cursor = Customer.find(filter).lean().cursor();
-    const csvStream = require("fast-csv").format({ headers: true });
+
+    // Write CSV header
+    const csvStream = fastcsv.format({ headers: true });
     csvStream.pipe(res);
 
     for await (const c of cursor) {
       csvStream.write({
-        Name: c.name || "",
-        Email: c.email || "",
-        Phone: c.phone || "",
+        Name: c.name,
+        Email: c.email,
+        Phone: c.phone,
         Address:
           typeof c.address === "object"
-            ? [
-                c.address.street || "",
-                c.address.city || "",
-                c.address.state || "",
-                c.address.postalCode || "",
-                c.address.country || "",
-              ]
+            ? [c.address.street, c.address.city, c.address.state, c.address.postalCode, c.address.country]
                 .filter(Boolean)
                 .join(", ")
             : c.address || "",
-        Notes: c.notes || "",
+        Notes: c.notes,
         Active: c.isActive ? "Yes" : "No",
       });
     }
@@ -83,6 +36,53 @@ exports.downloadCustomersCSV = async (req, res) => {
     res.status(500).json({ message: "Failed to download CSV", error });
   }
 };
+
+// Get customers
+
+// exports.downloadCustomersCSV = async (req, res) => {
+//   try {
+//     const filter = { createdBy: req.userId };
+//     const { startDate, endDate } = req.query;
+
+//     if (startDate || endDate) {
+//       filter.createdAt = {};
+//       if (startDate) filter.createdAt.$gte = new Date(startDate);
+//       if (endDate) filter.createdAt.$lte = new Date(endDate);
+//     }
+
+//     res.setHeader("Content-Type", "text/csv");
+//     res.setHeader("Content-Disposition", "attachment; filename=customers.csv");
+
+//     const cursor = Customer.find(filter).lean().cursor();
+//     const csvStream = require("fast-csv").format({ headers: true });
+//     csvStream.pipe(res);
+
+//     for await (const c of cursor) {
+//       csvStream.write({
+//         Name: c.name || "",
+//         Email: c.email || "",
+//         Phone: c.phone || "",
+//         Address:
+//           typeof c.address === "object"
+//             ? [
+//                 c.address.street || "",
+//                 c.address.city || "",
+//                 c.address.state || "",
+//                 c.address.postalCode || "",
+//                 c.address.country || "",
+//               ]
+//                 .filter(Boolean)
+//                 .join(", ")
+//             : c.address || "",
+//         Notes: c.notes || "",
+//         Active: c.isActive ? "Yes" : "No",
+//       });
+//     }
+//     csvStream.end();
+//   } catch (error) {
+//     res.status(500).json({ message: "Failed to download CSV", error });
+//   }
+// };
 
 exports.getAllCustomerByPagination = async (req, res) => {
   // Get page and limit from query params, set defaults
